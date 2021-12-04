@@ -51,9 +51,10 @@ int main(void)
 	{
 		if (flag < 3)
 		{
-			array[flag] = atoi(lines), flag++;
+			array[flag] = atoi(lines);
 			if (flag == 2)
 				sum_cur = sum_three(array);
+			flag++;
 		}
 		else
 		{
