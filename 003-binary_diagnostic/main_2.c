@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "life_sup.h"
 
 int power_rangers(int zords)
 {
@@ -25,25 +26,62 @@ int _strlen(char *str)
 
 }
 
-void init_counts(int *count_one, int *count_z, int digilen)
+void init_board(int *logic_board, int mystrlen)
 {
 	int i;
 
-	for (i = 0; i < digilen; i++)
-		count_one[i] = 0, count_z[i] = 0;
+	for (i = 0; i < mystrlen; i++)
+		logic_board[i] = 0;
 }
 
-void count_nums(int *count_one, int *count_z, char *str)
+void count_most(nth_digit *node, int *logic_board, int mystrlen, int search_val)
 {
-	int i;
+	int i, count_z = 0, count_one = 0;
+	char most_n;
 
-	for (i = 0; str[i] != '\0'; i++)
+	for (i = 0; i < mystrlen; i++)
 	{
-		if (str[i] == '0')
+		if (node->str[i] == '0' && logic_board[i] == search_val)
 			count_z[i]++;
-		else
+		else if (node->str[i] == '1' && logic_board[i] == search_val)
 			count_one[i]++;
 	}
+	if (count_z > count_one)
+		most_n = '0';
+	else if (count_z < count_one)
+		most_n = '1';
+	else
+		most_n = '1';
+	for (i = 0; i < mystrlen; i++)
+	{
+		if (node->str[i] == most_n)
+			logic_board[i]++;
+	}
+}
+
+void count_least(nth_digit *node, int *logic_board, int mystrlen, int search_val)
+{
+        int i, count_z = 0, count_one = 0;
+        char least_n;
+
+        for (i = 0; i < mystrlen; i++)
+        {
+                if (node->str[i] == '0' && logic_board[i] == search_val)
+                        count_z[i]++;
+                else if (node->str[i] == '1' && logic_board[i] == search_val)
+                        count_one[i]++;
+        }
+        if (count_z < count_one)
+                least_n = '0';
+        else if (count_z > count_one)
+                least_n = '1';
+        else
+                least_n = '0';
+        for (i = 0; i < mystrlen; i++)
+        {
+                if (node->str[i] == least_n)
+                        logic_board[i]--;
+        }
 }
 
 int main(void)
@@ -52,31 +90,44 @@ int main(void)
 	char *lines = NULL;
 	size_t len = 0;
 	ssize_t reading;
-	int majority[40], minority[40], oxy[40], co2[40];
-	int digilen = 0, i, oxy_n = 0, co2_n = 0;
+	int oxy[40], co2[40], logic_board[1024], logi_ox = 0, logi_co = 0;
+	int digilen = 0, i, j = 0, oxy_n = 0, co2_n = 0;
+	nth_digit *nth, *head = NULL, *current = NULL;
 
 	if (fp == NULL)
 		exit(EXIT_FAILURE);
 	while ((reading = getline(&lines, &len, fp)) != -1)
 	{
 		if (digilen == 0)
-			digilen = _strlen(lines), init_counts(count_one, count_z, digilen);
-		count_nums(count_one, count_z, lines);
+		{
+			digilen = _strlen(lines);
+			nth = malloc(sizeof(nth_digit *)), head = nth, i = 1;
+			while (i < digilen)
+				nth = nth->next, nth = malloc(sizeof(nth_digit *)), i++;
+		}
+		current = head, i = 0;
+		while (current)
+			current->str[j] = lines[i], current = current->next, i++;
+		j++;
 	}
 	printf("Gamma rate, Epsilon rate\n");
-	for (i = 0; i < digilen; i++)
+	current = head, j++;
+	while (current)
 	{
-		if (count_one[i] > count_z[i])
-			gr[i] = 1, er[i] = 0;
-		else if (count_one[i] < count_z[i])
-			gr[i] = 0, er[i] = 1;
-		printf("[%2d] ---- %d, %d\n", i, gr[i], er[i]);
-		gr_n += gr[i] * power_rangers(digilen - 1 - i);
-		er_n += er[i] * power_rangers(digilen - 1 - i);
+		count_most(current, logic_board, j, logi_ox);
+		count_least(current, logic_board, j, logi_co);
+		logi_ox++, logi_co--, current = current->next;
 	}
-	printf("gamma rate: %d\nepsilon rate: %d\nproduct: %d\n", gr_n, er_n, gr_n * er_n);
+	logi_ox--, logi_co++;
+	printf("oxy rate: %d\nCO2 rate: %d\nproduct: %d\n", oxy_n, co2_n, oxy_n * co2_n);
 	fclose(fp);
 	if (lines)
 		free(lines);
+	while (head)
+	{
+		current = head->next;
+		free(head);
+		head = current;
+	}
 	return (0);
 }
